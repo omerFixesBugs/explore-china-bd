@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-11-12T10:40:44.908Z",
+        "reason": "Claude: the ring cursor must resize to snap targets while keeping its 1px border (scale would thicken it); it is a single fixed-position element, so nothing else reflows"
+      }
+    ]
+  }
+}

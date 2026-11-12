@@ -1,26 +1,130 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Panels inside a sideways run, on wide screens with motion allowed and not in edit mode. */
+@custom-variant row {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    &:where(html:not(.edit) .run, html:not(.edit) .run *) {
+      @slot;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  --color-black: #0f0f0f;
+  --color-ground: #1d150c;
+  --color-deep: #1a1109;
+  --color-paper: #edece8;
+  --color-sand: #b59972;
+  --color-lacquer: #a8261b; /* deep red: wordmark, headings on dark */
+  --color-accent: #e41f13; /* vivid red: cards, lit rings, key words */
+  --font-sans: var(--font-host), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-libertinus), ui-sans-serif, sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  --out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* The line every panel aligns to: slightly below the middle, like a horizon. */
+  --line: calc(100svh - clamp(290px, calc(46svh - 8px), 360px));
+}
+
+html { background: var(--color-black); color: var(--color-paper); -webkit-font-smoothing: antialiased; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+@media (hover: hover) and (pointer: fine) { html { scrollbar-width: none; } html::-webkit-scrollbar { display: none; } }
+
+body { background: var(--color-ground); font-family: var(--font-sans); overflow-x: clip; }
+::selection { background: var(--color-accent); color: var(--color-paper); }
+:focus-visible { outline: 1px solid var(--color-accent); outline-offset: 4px; }
+
+/* ---------- Type (sizes from the reference, fluid below 1440px) ---------- */
+.t-wordmark { font-family: var(--font-serif); text-transform: uppercase; font-size: 14.4vw; line-height: 0.8; letter-spacing: -0.06em; white-space: nowrap; }
+.t-display { font-family: var(--font-serif); text-transform: uppercase; font-size: clamp(44px, 6.95vw, 100px); line-height: 1; letter-spacing: -0.06em; font-weight: 400; }
+.t-tagline { font-family: var(--font-serif); text-transform: uppercase; font-size: clamp(20px, 2.08vw, 30px); line-height: 1.07; letter-spacing: -0.05em; }
+.t-statement { font-family: var(--font-sans); text-transform: uppercase; font-size: clamp(20px, 2.08vw, 30px); line-height: 1.14; letter-spacing: -0.04em; }
+.t-verse { font-family: var(--font-sans); font-size: clamp(20px, 1.8vw, 26px); line-height: 1.2; letter-spacing: -0.04em; }
+.t-label { font-family: var(--font-serif); text-transform: uppercase; font-size: 16px; line-height: 20px; }
+.t-ui { font-family: var(--font-sans); text-transform: uppercase; font-size: clamp(16px, 1.25vw, 18px); line-height: 20px; letter-spacing: -0.04em; }
+.t-small { font-family: var(--font-sans); text-transform: uppercase; font-size: 14px; line-height: 18px; letter-spacing: -0.04em; }
+
+/* ---------- Rings ---------- */
+.ring { fill: none; stroke: currentColor; stroke-opacity: 0.3; vector-effect: non-scaling-stroke; transition: stroke 750ms var(--out), stroke-opacity 750ms var(--out); }
+.is-lit .ring, .ring.is-on { stroke: var(--color-accent); stroke-opacity: 1; }
+.lit-text { transition: color 750ms var(--out); }
+.is-lit .lit-text { color: var(--color-accent); }
+
+/* Photos: red duotone, printed into the page; full colour when lit or hovered */
+.duo { background-color: var(--color-accent); overflow: hidden; transition: background-color 1200ms var(--out); }
+.duo > img { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.15); transition: filter 1200ms var(--out); }
+/* Lit or hovered: the red backing fades away, so the photo shows in its own colours. */
+.is-lit .duo, .duo:not([data-static]):hover { background-color: transparent; }
+.is-lit .duo > img, .duo:not([data-static]):hover > img { filter: grayscale(0) contrast(1); }
+.mono > img { filter: grayscale(1) contrast(1.05); }
+
+/* ---------- Buttons ---------- */
+/* Primary (corners): text only; a soft blurred fill opens from the middle on hover */
+.btn { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 7px 17px; white-space: nowrap; transition: color 250ms var(--out); }
+.btn-primary::after { content: ""; position: absolute; inset: 0; background: color-mix(in srgb, currentColor 12%, transparent); backdrop-filter: blur(4px); clip-path: inset(50% 0); transition: clip-path 400ms var(--out); pointer-events: none; }
+.btn-primary:hover::after, .btn-primary:focus-visible::after { clip-path: inset(0); }
+.btn > * { position: relative; z-index: 1; }
+
+/* Secondary: hairline frame that pinches at the middle, serif label that rolls */
+.btn-secondary { padding: 7px 30px; font-family: var(--font-serif); text-transform: uppercase; font-size: clamp(16px, 1.25vw, 18px); line-height: 20px; }
+.btn-frame { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.btn-frame path { fill: none; stroke: currentColor; stroke-width: 1; vector-effect: non-scaling-stroke; d: path("M 0 0 L 50 0 L 100 0 L 100 100 L 50 100 L 0 100 Z"); transition: d 400ms cubic-bezier(0.4, 0, 0.2, 1); }
+.btn-secondary:hover .btn-frame path, .btn-secondary:focus-visible .btn-frame path { d: path("M 0 0 L 50 6 L 100 0 L 100 100 L 50 94 L 0 100 Z"); }
+.roll { position: relative; display: block; overflow: hidden; }
+.roll > span { display: block; transition: transform 750ms var(--out); }
+.roll > span + span { position: absolute; top: 100%; left: 0; right: 0; }
+a:hover .roll > span, button:hover .roll > span, a:focus-visible .roll > span, button:focus-visible .roll > span { transform: translateY(-100%); }
+
+/* ---------- Cursor ---------- */
+.cursor { --ink: var(--color-paper); position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.cursor.is-dark { --ink: var(--color-ground); }
+.cursor-ring { position: absolute; left: 0; top: 0; display: grid; place-items: center; border: 1px solid var(--ink); border-radius: 999px; opacity: 0; transition: border-color 400ms var(--out), opacity 400ms var(--out); will-change: transform, width, height; }
+.cursor-label { position: absolute; left: 0; top: 0; color: var(--ink); white-space: nowrap; opacity: 0; transition: opacity 400ms var(--out), color 400ms var(--out); }
+html:not(.has-cursor) .cursor { display: none; }
+@media (hover: hover) and (pointer: fine) { html.has-cursor, html.has-cursor * { cursor: none !important; } }
+
+/* The stack keeps its last card pinned for one more screen while the next run (pulled up by a screen) rises over it. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { html:not(.edit) .stack-tail { height: 100svh; } }
+
+/* While the journey backdrop draws, its panels give up their own plain backgrounds. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  html.has-backdrop:not(.edit) .bd-clear { background-color: transparent; }
+  html.has-backdrop:not(.edit) .bd-hide { opacity: 0; }
+}
+.bd-hide { transition: opacity 700ms var(--out); }
+
+/* The hero copy after the footer only exists where the page loops (wide, motion, not editing). */
+.loop-tail { display: none; }
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { html:not(.edit) .loop-tail { display: block; } }
+
+/* Custom scrollbar */
+.scrollbar { position: fixed; right: 4px; top: 0; bottom: 0; width: 3px; z-index: 40; pointer-events: none; }
+.scrollbar > span { position: absolute; left: 0; right: 0; top: 0; height: 40px; background: var(--color-sand); opacity: 0.8; }
+
+/* Hero ring timer */
+@keyframes trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.trace { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.trace.tracing { animation: trace var(--dur, 6s) linear forwards; }
+
+/* Breathing ripples */
+@keyframes ripple { from { transform: scale(1); opacity: 0.6; } to { transform: scale(1.6); opacity: 0; } }
+
+/* FAQ */
+@keyframes sharpen { from { filter: blur(10px); opacity: 0; transform: translateY(12px); } to { filter: blur(0); opacity: 1; transform: none; } }
+details[open] .answer { animation: sharpen 900ms var(--out) both; }
+details summary::-webkit-details-marker { display: none; }
+details summary { list-style: none; }
+details .plus-v { transition: transform 750ms var(--out); transform-origin: center; transform-box: fill-box; }
+details[open] .plus-v { transform: scaleY(0); }
+
+/* Smoke placeholder until the canvas is ready */
+.smoke-fallback { background: radial-gradient(70% 60% at 85% 40%, rgb(240 64 31 / 0.85), transparent 70%), radial-gradient(60% 70% at 30% 80%, rgb(168 38 27 / 0.7), transparent 70%), #2a0c06; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
