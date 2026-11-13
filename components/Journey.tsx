@@ -5,7 +5,7 @@ import { Panel } from "./Run";
 import { Secondary, Words } from "./Buttons";
 import { Wordmark } from "./Hero";
 import { createSurface } from "@/lib/surface";
-import { fineMotion, gsap, isEdit } from "@/lib/motion";
+import { isWide, gsap, isEdit } from "@/lib/motion";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -21,7 +21,7 @@ export function Backdrop() {
   const host = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!fineMotion() || isEdit()) return;
+    if (!isWide() || isEdit()) return;
     const h = host.current!;
     const root = document.documentElement;
     let s: ReturnType<typeof createSurface> = null;
@@ -95,6 +95,12 @@ export function Invitation() {
           <div className="mt-4 row:mt-0">
             <p className="t-statement max-w-[30rem] text-sand row:w-[30vw]"><Words text={t.text} /></p>
             <div className="mt-6 text-sand"><Secondary href={t.cta.href} label={t.cta.label} arrow /></div>
+            <p className="t-label mt-10 text-sand/80">{t.call}</p>
+            <div className="mt-2 flex flex-col items-start">
+              {site.phones.map((ph) => (
+                <a key={ph.tel} href={`tel:${ph.tel}`} data-cursor="snap" className="t-tagline text-paper transition-colors duration-500 hover:text-jade">{ph.label}</a>
+              ))}
+            </div>
           </div>
         </div>
       </div>

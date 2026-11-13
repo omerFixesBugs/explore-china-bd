@@ -30,7 +30,7 @@ export default function Loader() {
       .to(words, { autoAlpha: 0, filter: "blur(10px)", duration: 0.7, stagger: 0.08, ease: "power2.in" }, "+=0.9")
       .to({}, { duration: 0.3 })
       // the line warms up, as if the hero were already showing through a hairline slit
-      .to(line, { backgroundColor: "#ff6a3d", opacity: 1, boxShadow: "0 0 18px 1px rgba(255,106,61,.55)", duration: 0.4, ease: "power2.out" })
+      .to(line, { backgroundColor: "#f2b65a", opacity: 1, boxShadow: "0 0 18px 1px rgba(242,182,90,.55)", duration: 0.4, ease: "power2.out" })
       // then it splits open: slow start, fast middle, soft landing
       .add(() => introDone())
       .to([top, bottom], { scaleY: 0, duration: 0.95, ease: "power4.inOut", force3D: true }, ">-0.05")

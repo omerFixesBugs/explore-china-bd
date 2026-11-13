@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useRef } from "react";
 import { site } from "@/content/site";
-import { gsap, SplitText, useGSAP } from "@/lib/motion";
+import { gsap, SplitText, useGSAP, MOTION, isEdit } from "@/lib/motion";
 import Surface from "./Surface";
 import { Panel } from "./Run";
 
@@ -20,27 +20,27 @@ function Card({ s, i, inRun = false }: { s: Item; i: number; inRun?: boolean }) 
   return (
     <>
       <div data-blur data-parallax={inRun ? "0.85" : undefined} className={`absolute inset-y-0 right-0 ${inRun ? "-left-[12vw]" : "left-0"}`}>
-        <Surface opts={{ mode: "ground", ground: "#e41f13", images: [s.image], tone: "duo", glow: "#ff6a3d" }}>
+        <Surface opts={{ mode: "ground", ground: "#0e8c80", images: [s.image], tone: "duo", glow: "#f2b65a" }}>
           <div className="duo absolute inset-0">
             <img src={s.image} alt="" loading="lazy" className="h-full w-full object-cover" />
           </div>
         </Surface>
       </div>
 
-      <div data-content data-shift={inRun ? "0.35" : undefined} className="relative flex flex-col gap-10 lg:absolute lg:inset-x-0 lg:top-0 lg:block lg:h-[160vh]">
-        <svg aria-hidden viewBox="0 0 100 100" className="pointer-events-none absolute left-[14vw] top-[72vh] hidden h-[66vw] w-[66vw] lg:block">
+      <div data-content data-shift={inRun ? "0.35" : undefined} className="relative flex flex-col gap-10 lg:absolute lg:inset-x-0 lg:top-0 lg:block lg:h-[160vh] mo:absolute mo:inset-x-0 mo:top-0 mo:block mo:h-[160svh]">
+        <svg aria-hidden viewBox="0 0 100 100" className="pointer-events-none absolute left-[14vw] top-[72vh] hidden h-[66vw] w-[66vw] lg:block mo:block mo:left-[-10vw] mo:top-[46svh] mo:h-[120vw] mo:w-[120vw]">
           <circle data-ring cx="50" cy="50" r="49.9" pathLength={1} className={`fill-none stroke-paper/45 [vector-effect:non-scaling-stroke] ${inRun ? "" : "[stroke-dasharray:1]"}`} />
         </svg>
 
-        <h2 data-title className="t-display relative text-center lg:absolute lg:inset-x-[6vw] lg:top-[24vh]">{s.title}</h2>
+        <h2 data-title className="t-display relative text-center lg:absolute lg:inset-x-[6vw] lg:top-[24vh] mo:absolute mo:inset-x-6 mo:top-[22svh]">{s.title}</h2>
 
-        <div className="relative lg:absolute lg:left-[58vw] lg:top-[62vh] lg:w-[30vw]">
+        <div className="relative lg:absolute lg:left-[58vw] lg:top-[62vh] lg:w-[30vw] mo:absolute mo:inset-x-6 mo:top-[60svh] mo:max-w-[36rem]">
           <p className="t-label mb-4 text-paper/70">Services · {nn(i + 1)}/{nn(total)}</p>
           <p data-card-lines className="t-statement">{s.text[0]}</p>
-          <p data-card-lines className="t-statement mt-8 lg:ml-[7vw]">{s.text[1]}</p>
+          <p data-card-lines className="t-statement mt-8 lg:ml-[7vw] mo:ml-10">{s.text[1]}</p>
         </div>
 
-        <div className="relative lg:absolute lg:left-[6vw] lg:top-[calc(55vh+var(--line)-36px)]">
+        <div className="relative lg:absolute lg:left-[6vw] lg:top-[calc(55vh+var(--line)-36px)] mo:absolute mo:left-6 mo:top-[122svh]">
           <p className="t-label mb-2 text-paper/80">{s.course.label}</p>
           <a href="#contact" data-cursor="snap" className="group flex w-[19rem] items-stretch bg-paper/90 text-ground backdrop-blur-sm">
             <span className="block h-[72px] w-[110px] shrink-0 overflow-hidden">
@@ -66,7 +66,7 @@ function Card({ s, i, inRun = false }: { s: Item; i: number; inRun?: boolean }) 
 export function LastService() {
   const i = total - 1;
   return (
-    <Panel id="services-last" className="relative min-h-svh overflow-hidden px-6 py-28 text-paper row:w-screen row:min-h-0 row:p-0">
+    <Panel id="services-last" className="relative min-h-svh overflow-hidden px-6 py-28 text-paper row:w-screen row:min-h-0 row:p-0 mo:h-[175svh] mo:p-0">
       <Card s={site.services[i]} i={i} inRun />
     </Panel>
   );
@@ -83,7 +83,10 @@ export default function Services() {
 
   useGSAP(() => {
     const mm = gsap.matchMedia();
-    mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
+    // Desktop as before; phones and tablets too (their stacked `mo:` layout), except in edit mode.
+    mm.add({ lg: "(min-width: 1024px)", motion: MOTION }, (ctx) => {
+      const { lg, motion } = ctx.conditions as { lg: boolean; motion: boolean };
+      if (!motion || (!lg && isEdit())) return;
       const cards = gsap.utils.toArray<HTMLElement>("[data-card]");
       const travels = gsap.utils.toArray<HTMLElement>("[data-travel]");
       const run = document.getElementById("journey");
@@ -122,13 +125,13 @@ export default function Services() {
         <Fragment key={s.title}>
           <article
             data-card
-            className="relative flex min-h-svh flex-col gap-10 overflow-hidden px-6 py-28 text-paper lg:sticky lg:top-0 lg:block lg:h-screen lg:min-h-0 lg:p-0"
+            className="relative flex min-h-svh flex-col gap-10 overflow-hidden px-6 py-28 text-paper lg:sticky lg:top-0 lg:block lg:h-screen lg:min-h-0 lg:p-0 mo:sticky mo:top-0 mo:block mo:h-svh mo:min-h-0 mo:p-0"
             style={{ zIndex: i + 1 }}
           >
             <Card s={s} i={i} />
           </article>
           {/* Scroll room while this card is held and its text travels; the next card only comes after it. */}
-          <div data-travel aria-hidden className="hidden h-[110vh] lg:block" />
+          <div data-travel aria-hidden className="hidden h-[110vh] lg:block mo:block" />
         </Fragment>
       ))}
       {/* Keeps the last card pinned for one more screen while the next run rises over it. */}

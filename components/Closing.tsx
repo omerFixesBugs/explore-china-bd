@@ -50,7 +50,7 @@ export function Footer() {
 
   return (
     <footer ref={ref} className="relative h-svh min-h-[640px] overflow-hidden text-paper" style={{ ["--fog" as string]: 0 }}>
-      <Surface opts={{ mode: "smoke", palette: SMOKE_WARM, glow: "#ffd2b8" }}>
+      <Surface opts={{ mode: "smoke", palette: SMOKE_WARM, glow: "#ffe6bf" }}>
         <div className="smoke-fallback absolute inset-0" />
       </Surface>
       <span aria-hidden className="absolute inset-x-0 h-px bg-paper/30" style={{ top: "var(--line)" }} />
@@ -77,6 +77,9 @@ export function Footer() {
       <div className="absolute inset-x-0 text-center" style={{ bottom: "calc(100% - var(--line) + 70px)" }}>
         <h2 data-foot-in className="t-tagline">{f.heading.map((l, i) => <span key={i} className="block">{l}</span>)}</h2>
         <p data-foot-in className="t-small mt-4 normal-case text-paper/80">{f.sub}</p>
+        <p data-foot-in className="t-ui mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1">
+          {site.phones.map((ph) => <a key={ph.tel} href={`tel:${ph.tel}`} data-cursor="snap" className="underline decoration-paper/40 underline-offset-4 hover:decoration-paper">{ph.label}</a>)}
+        </p>
       </div>
       <button
         data-foot-in
@@ -102,7 +105,7 @@ export function Footer() {
 export function LoopTail() {
   return (
     <div id="loop-tail" aria-hidden inert className="loop-tail relative h-svh overflow-hidden bg-deep text-paper">
-      <Surface opts={{ mode: "smoke", palette: SMOKE_HERO, glow: "#ff6a3d" }}>
+      <Surface opts={{ mode: "smoke", palette: SMOKE_HERO, glow: "#f2b65a" }}>
         <div className="smoke-fallback absolute inset-0" />
       </Surface>
       <span className="absolute inset-x-0 h-px bg-paper/25" style={{ top: "var(--line)" }} />
@@ -160,7 +163,7 @@ export function Breath() {
   if (!open) return null;
   const scale = phase === "in" ? 1.12 : 0.92;
   return (
-    <div ref={ref} role="dialog" aria-modal="true" aria-label="Take a breath" className="fixed inset-0 z-[97] overflow-hidden text-paper" style={{ background: "linear-gradient(180deg, #efe2db 0%, #e8705a 42%, #e2331c 75%, #c41d12 100%)" }}>
+    <div ref={ref} role="dialog" aria-modal="true" aria-label="Take a breath" className="fixed inset-0 z-[97] overflow-hidden text-paper" style={{ background: "linear-gradient(180deg, #eef3ef 0%, #9ed8cc 42%, #2a9d90 75%, #0e6f68 100%)" }}>
       <span aria-hidden className="absolute inset-x-0 h-px bg-paper/40" style={{ top: "var(--line)" }} />
       <div aria-hidden className="absolute left-1/2 h-[min(56vh,80vw)] w-[min(56vh,80vw)] -translate-x-1/2 -translate-y-1/2" style={{ top: "var(--line)" }}>
         <span className="absolute inset-0 rounded-full border border-paper/50 transition-transform duration-[4000ms] ease-in-out" style={{ transform: `scale(${scale})` }} />
@@ -179,7 +182,7 @@ export function Breath() {
             <p className="t-small mt-3 normal-case text-paper/85">{b.note}</p>
             <div className="mt-6 flex justify-center gap-3">
               <Secondary href={site.whatsapp} label="WhatsApp" />
-              <Secondary href={`tel:${site.phone.replace(/\s/g, "")}`} label="Call us" />
+              <Secondary href={`tel:${site.phones[0].tel}`} label="Call us" />
             </div>
           </div>
         ) : (

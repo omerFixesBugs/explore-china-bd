@@ -1,22 +1,31 @@
 @import "tailwindcss";
 
-/* Panels inside a sideways run, on wide screens with motion allowed and not in edit mode. */
+/* Panels inside a sideways run, on wide landscape screens (mouse or touch) with motion allowed and not in edit mode. */
 @custom-variant row {
-  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  @media (min-width: 1024px) and (orientation: landscape) and (prefers-reduced-motion: no-preference) {
     &:where(html:not(.edit) .run, html:not(.edit) .run *) {
       @slot;
     }
   }
 }
 
+/* Stacked layout (phones, portrait tablets) with motion allowed and not editing: sticky stacks, pins, swipe rows. */
+@custom-variant mo {
+  @media (prefers-reduced-motion: no-preference) and (max-width: 1023.98px), (prefers-reduced-motion: no-preference) and (orientation: portrait) {
+    &:where(html:not(.edit) *) {
+      @slot;
+    }
+  }
+}
+
 @theme {
-  --color-black: #0f0f0f;
-  --color-ground: #1d150c;
-  --color-deep: #1a1109;
+  --color-black: #070d12;
+  --color-ground: #0d1b24;
+  --color-deep: #0a161e;
   --color-paper: #edece8;
-  --color-sand: #b59972;
-  --color-lacquer: #a8261b; /* deep red: wordmark, headings on dark */
-  --color-accent: #e41f13; /* vivid red: cards, lit rings, key words */
+  --color-sand: #c8a46a;
+  --color-jade: #3fb8a6; /* jade: wordmark, headings on dark */
+  --color-accent: #0e8c80; /* deep sea teal: cards, lit rings, key words */
   --font-sans: var(--font-host), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-libertinus), ui-sans-serif, sans-serif;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -28,8 +37,10 @@
   /* The line every panel aligns to: slightly below the middle, like a horizon. */
   --line: calc(100svh - clamp(290px, calc(46svh - 8px), 360px));
 }
+/* Phones and portrait tablets: the line sits near the middle, so the stacked hero rings centre on it (as in the reference). */
+@media not all and (min-width: 1024px) and (orientation: landscape) { :root { --line: 48svh; } }
 
-html { background: var(--color-black); color: var(--color-paper); -webkit-font-smoothing: antialiased; }
+html { background: var(--color-black); color: var(--color-paper); -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
@@ -55,10 +66,18 @@ body { background: var(--color-ground); font-family: var(--font-sans); overflow-
 .lit-text { transition: color 750ms var(--out); }
 .is-lit .lit-text { color: var(--color-accent); }
 
-/* Photos: red duotone, printed into the page; full colour when lit or hovered */
+/* Touch: a ring swells with a springy overshoot and sends out a ripple; its "+" ([data-magnet]) is pulled by the pointer (Shell). */
+[data-touch] > svg:not([data-magnet]) { transition: scale 900ms cubic-bezier(0.34, 1.8, 0.5, 1); }
+[data-touch]:hover > svg:not([data-magnet]), [data-touch]:focus-visible > svg:not([data-magnet]) { scale: 1.045; }
+[data-touch]::after { content: ""; position: absolute; inset: 0; border-radius: 999px; border: 1px solid var(--color-accent); opacity: 0; pointer-events: none; }
+[data-touch]:hover::after { animation: touch 1100ms var(--out); }
+@keyframes touch { from { scale: 0.15; opacity: 0.9; } to { scale: 1.12; opacity: 0; } }
+[data-magnet] { will-change: transform; }
+
+/* Photos: teal duotone, printed into the page; full colour when lit or hovered */
 .duo { background-color: var(--color-accent); overflow: hidden; transition: background-color 1200ms var(--out); }
 .duo > img { mix-blend-mode: multiply; filter: grayscale(1) contrast(1.15); transition: filter 1200ms var(--out); }
-/* Lit or hovered: the red backing fades away, so the photo shows in its own colours. */
+/* Lit or hovered: the teal backing fades away, so the photo shows in its own colours. */
 .is-lit .duo, .duo:not([data-static]):hover { background-color: transparent; }
 .is-lit .duo > img, .duo:not([data-static]):hover > img { filter: grayscale(0) contrast(1); }
 .mono > img { filter: grayscale(1) contrast(1.05); }
@@ -81,7 +100,7 @@ body { background: var(--color-ground); font-family: var(--font-sans); overflow-
 a:hover .roll > span, button:hover .roll > span, a:focus-visible .roll > span, button:focus-visible .roll > span { transform: translateY(-100%); }
 
 /* ---------- Cursor ---------- */
-.cursor { --ink: var(--color-paper); position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.cursor { --ink: var(--color-paper); position: fixed; inset: 0; z-index: 100; pointer-events: none; }
 .cursor.is-dark { --ink: var(--color-ground); }
 .cursor-ring { position: absolute; left: 0; top: 0; display: grid; place-items: center; border: 1px solid var(--ink); border-radius: 999px; opacity: 0; transition: border-color 400ms var(--out), opacity 400ms var(--out); will-change: transform, width, height; }
 .cursor-label { position: absolute; left: 0; top: 0; color: var(--ink); white-space: nowrap; opacity: 0; transition: opacity 400ms var(--out), color 400ms var(--out); }
@@ -89,10 +108,10 @@ html:not(.has-cursor) .cursor { display: none; }
 @media (hover: hover) and (pointer: fine) { html.has-cursor, html.has-cursor * { cursor: none !important; } }
 
 /* The stack keeps its last card pinned for one more screen while the next run (pulled up by a screen) rises over it. */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { html:not(.edit) .stack-tail { height: 100svh; } }
+@media (min-width: 1024px) and (orientation: landscape) and (prefers-reduced-motion: no-preference) { html:not(.edit) .stack-tail { height: 100svh; } }
 
 /* While the journey backdrop draws, its panels give up their own plain backgrounds. */
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+@media (min-width: 1024px) and (orientation: landscape) and (prefers-reduced-motion: no-preference) {
   html.has-backdrop:not(.edit) .bd-clear { background-color: transparent; }
   html.has-backdrop:not(.edit) .bd-hide { opacity: 0; }
 }
@@ -100,15 +119,15 @@ html:not(.has-cursor) .cursor { display: none; }
 
 /* The hero copy after the footer only exists where the page loops (wide, motion, not editing). */
 .loop-tail { display: none; }
-@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { html:not(.edit) .loop-tail { display: block; } }
+@media (min-width: 1024px) and (orientation: landscape) and (prefers-reduced-motion: no-preference) { html:not(.edit) .loop-tail { display: block; } }
 
 /* Custom scrollbar */
 .scrollbar { position: fixed; right: 4px; top: 0; bottom: 0; width: 3px; z-index: 40; pointer-events: none; }
 .scrollbar > span { position: absolute; left: 0; right: 0; top: 0; height: 40px; background: var(--color-sand); opacity: 0.8; }
 
 /* Hero ring timer */
-@keyframes trace { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-.trace { stroke-dasharray: 1; stroke-dashoffset: 1; }
+@keyframes trace { from { stroke-dashoffset: var(--len, 1); } to { stroke-dashoffset: 0; } }
+.trace { stroke-dasharray: var(--len, 1); stroke-dashoffset: var(--len, 1); }
 .trace.tracing { animation: trace var(--dur, 6s) linear forwards; }
 
 /* Breathing ripples */
@@ -117,13 +136,17 @@ html:not(.has-cursor) .cursor { display: none; }
 /* FAQ */
 @keyframes sharpen { from { filter: blur(10px); opacity: 0; transform: translateY(12px); } to { filter: blur(0); opacity: 1; transform: none; } }
 details[open] .answer { animation: sharpen 900ms var(--out) both; }
+/* Answers glide open and closed (height animates where the browser supports it; elsewhere they just sharpen in). */
+:root { interpolate-size: allow-keywords; }
+details::details-content { block-size: 0; overflow: clip; transition: block-size 800ms var(--out), content-visibility 800ms allow-discrete; }
+details[open]::details-content { block-size: auto; }
 details summary::-webkit-details-marker { display: none; }
 details summary { list-style: none; }
 details .plus-v { transition: transform 750ms var(--out); transform-origin: center; transform-box: fill-box; }
 details[open] .plus-v { transform: scaleY(0); }
 
 /* Smoke placeholder until the canvas is ready */
-.smoke-fallback { background: radial-gradient(70% 60% at 85% 40%, rgb(240 64 31 / 0.85), transparent 70%), radial-gradient(60% 70% at 30% 80%, rgb(168 38 27 / 0.7), transparent 70%), #2a0c06; }
+.smoke-fallback { background: radial-gradient(70% 60% at 85% 40%, rgb(242 182 90 / 0.55), transparent 70%), radial-gradient(60% 70% at 30% 80%, rgb(14 140 128 / 0.75), transparent 70%), #04141c; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }

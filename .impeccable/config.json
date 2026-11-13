@@ -11,6 +11,12 @@
         ],
         "createdAt": "2026-11-12T10:40:44.908Z",
         "reason": "Claude: the ring cursor must resize to snap targets while keeping its 1px border (scale would thicken it); it is a single fixed-position element, so nothing else reflows"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.8, 0.5, 1)",
+        "createdAt": "2026-11-13T09:21:31.895Z",
+        "reason": "user approved plan (2026-11-13) specifying a springy bounce on ring hover so rings feel touched"
       }
     ]
   }

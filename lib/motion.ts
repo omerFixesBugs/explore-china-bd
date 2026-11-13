@@ -9,13 +9,16 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger, SplitText,
 export const EASE = "expo.out"; // close to out-soft for GSAP tweens; CSS uses the exact cubic-bezier
 gsap.defaults({ ease: EASE, duration: 0.9 });
 
-// Same query as the Tailwind `row:` variant.
-export const WIDE = "(min-width: 1024px) and (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)";
+// Same query as the Tailwind `row:` variant: landscape screens from 1024px get the sideways runs, mouse or touch.
+export const WIDE = "(min-width: 1024px) and (orientation: landscape) and (prefers-reduced-motion: no-preference)";
 export const MOTION = "(prefers-reduced-motion: no-preference)";
 
 export const isEdit = () => typeof location !== "undefined" && new URLSearchParams(location.search).has("edit");
 export const fineMotion = () =>
   typeof window !== "undefined" && matchMedia("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)").matches;
+/** Motion allowed on any device (live surfaces, stacks, pins); the ring cursor alone still needs a mouse (fineMotion). */
+export const motionOK = () => typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: no-preference)").matches;
+export const isWide = () => typeof window !== "undefined" && matchMedia(WIDE).matches;
 
 /** Fires once the intro loader has opened (or immediately if it was skipped). */
 export function onIntroDone(fn: () => void) {

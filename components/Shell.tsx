@@ -11,7 +11,7 @@ type L = Lenis & { scroll: number; limit: number };
  *
  * Cursor modes come from the nearest [data-cursor] ancestor:
  *   snap      ring wraps the element (or [data-cursor-snap-to] inside it)
- *   dissolve  ring flies onto the target ring and fades into it
+ *   dissolve  ring flies onto the target ring and wraps it (stays visible)
  *   grow      ring grows
  *   hold      ring + "( Hold an image )" label
  *   hide      no ring
@@ -100,6 +100,10 @@ export default function Shell() {
       const text = target?.dataset.cursorLabel || (target?.dataset.cursor === "hold" ? "( Hold an image )" : "");
       if (lab.textContent !== text) lab.textContent = text;
     };
+    // Touch: the "+" inside a hovered ring ([data-touch] > [data-magnet]) spins and leans towards the pointer, then springs back.
+    let touch: HTMLElement | null = null;
+    let mag: HTMLElement | null = null;
+    const clamp = gsap.utils.clamp(-36, 36);
     const onMove = (e: PointerEvent) => {
       p.x = e.clientX;
       p.y = e.clientY;
@@ -109,6 +113,17 @@ export default function Shell() {
         c.y = p.y;
       }
       read(e.target as Element);
+      const t = (e.target as Element)?.closest?.<HTMLElement>("[data-touch]") ?? null;
+      if (t !== touch) {
+        if (mag) gsap.to(mag, { x: 0, y: 0, rotation: 0, duration: 1.2, ease: "elastic.out(1, 0.35)", overwrite: true });
+        touch = t;
+        mag = t?.querySelector<HTMLElement>("[data-magnet]") ?? null;
+        if (mag) gsap.to(mag, { rotation: 180, duration: 0.7, ease: "back.out(2)" });
+      }
+      if (touch && mag) {
+        const r = touch.getBoundingClientRect();
+        gsap.to(mag, { x: clamp((p.x - r.left - r.width / 2) * 0.35), y: clamp((p.y - r.top - r.height / 2) * 0.35), duration: 0.5, ease: "power3.out", overwrite: "auto" });
+      }
     };
     const tick = () => {
       if (!seen) return;
@@ -124,7 +139,6 @@ export default function Shell() {
         w = box.width + pad * 2; h = box.height + pad * 2;
         x = box.left + box.width / 2; y = box.top + box.height / 2;
         radius = round ? "999px" : "0px";
-        if (mode === "dissolve") alpha = 0;
       } else if (mode === "grow") { w = h = 64; }
       else if (mode === "hold") { w = h = 44; }
       else if (mode === "hide") alpha = 0;

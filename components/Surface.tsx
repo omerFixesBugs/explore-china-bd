@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createSurface, type SurfaceOpts, type SurfaceState } from "@/lib/surface";
-import { fineMotion, isEdit } from "@/lib/motion";
+import { motionOK, isEdit } from "@/lib/motion";
 
 /**
  * A section's background drawn in WebGL that the pointer stirs like water (see lib/surface).
- * `children` is the static fallback (image or colour): shown until the canvas is ready, and always on touch,
- * reduced motion and edit mode. With `opts.leadVw`, the surface reaches that far left over the previous panel
- * with a soft smoky edge — only while its sideways run is active.
+ * `children` is the static fallback (image or colour): shown until the canvas is ready, and always under
+ * reduced motion and in edit mode. Mouse or finger stirs it. With `opts.leadVw`, the surface reaches that far left over
+ * the previous panel with a soft smoky edge while its sideways run is active; with `opts.leadVh` it reaches up over the
+ * previous section in the stacked layout. Outside a sideways run the surface works vertically (burns run top → bottom).
  */
 export default function Surface({ opts, state, className = "", children }: { opts: SurfaceOpts; state?: SurfaceState; className?: string; children?: ReactNode }) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -20,7 +21,7 @@ export default function Surface({ opts, state, className = "", children }: { opt
   });
 
   useEffect(() => {
-    if (!fineMotion() || isEdit()) return;
+    if (!motionOK() || isEdit()) return;
     const el = wrap.current!;
     const h = host.current!;
     let s: ReturnType<typeof createSurface> = null;
@@ -28,9 +29,12 @@ export default function Surface({ opts, state, className = "", children }: { opt
       if (s) return;
       const row = !!el.closest(".run.is-row");
       const lead = row ? opts.leadVw || 0 : 0;
+      const up = row ? 0 : opts.leadVh || 0;
       h.style.left = lead ? `-${lead}vw` : "0";
       h.style.width = lead ? `calc(100% + ${lead}vw)` : "100%";
-      s = createSurface(h, { ...opts, leadVw: lead }, () => live.current, () => setReady(true));
+      h.style.top = up ? `-${up}vh` : "0";
+      h.style.height = up ? `calc(100% + ${up}vh)` : "100%";
+      s = createSurface(h, { ...opts, leadVw: lead, leadVh: up, vertical: !row }, () => live.current, () => setReady(true));
     };
     const stop = () => {
       s?.destroy();
@@ -50,7 +54,7 @@ export default function Surface({ opts, state, className = "", children }: { opt
   return (
     <div ref={wrap} aria-hidden className={`pointer-events-none absolute inset-0 ${className}`}>
       <div className={`absolute inset-0 transition-opacity duration-700 ${ready ? "opacity-0" : "opacity-100"}`}>{children}</div>
-      <div ref={host} className="absolute inset-y-0 left-0 w-full" />
+      <div ref={host} className="absolute left-0 top-0 h-full w-full" />
     </div>
   );
 }

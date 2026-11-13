@@ -16,9 +16,11 @@ void main(){
   vec2 v = dec(texture2D(uVel, vUv));
   vec2 nv = dec(texture2D(uVel, vUv - v * vec2(1. / uAspect, 1.) * .014));
   float l = length(nv);
-  if (l > 0.) nv *= max(l * .972 - .003, 0.) / l;
+  if (l > 0.) nv *= max(l * .982 - .002, 0.) / l;
   vec2 d = vUv - uPtr; d.x *= uAspect;
-  nv += uDelta * exp(-dot(d, d) / .004) * 16. * uOn;
+  float fall = exp(-dot(d, d) / .006) * uOn;
+  // push along the stroke, plus a curl around the pointer so the wake rolls into eddies (brush-stroke swirls)
+  nv += uDelta * fall * 18. + vec2(-d.y, d.x) * fall * length(uDelta) * 140.;
   gl_FragColor = vec4(clamp(nv, -1., 1.) * .5 + .5, 0., 1.);
 }`;
 
@@ -27,7 +29,7 @@ precision highp float;
 varying vec2 vUv;
 uniform vec2 uRes; uniform float uTime; uniform sampler2D uVel; uniform float uStrength;
 uniform float uMode; uniform vec3 uC0; uniform vec3 uC1; uniform vec3 uC2; uniform vec3 uGround; uniform vec3 uGlow;
-uniform float uGlowAmt; uniform float uFog; uniform float uLead;
+uniform float uGlowAmt; uniform float uFog; uniform float uLead; uniform float uVert;
 uniform sampler2D uT0; uniform sampler2D uT1; uniform sampler2D uT2; uniform vec3 uW; uniform vec3 uAsp;
 uniform float uTone; uniform float uColor; uniform float uBlur; uniform float uBurn;
 uniform vec3 uBurnCol; uniform vec3 uBurnGlow; uniform float uBurnShift; uniform float uBurnWidth;
@@ -62,10 +64,18 @@ vec3 tap(sampler2D t, vec2 uv){
 void main(){
   vec2 v = texture2D(uVel, vUv).xy * 2. - 1.;
   float m = length(v);
-  vec2 uv = vUv - v * uStrength;
-  float pw = max(uRes.x - uLead, 1.);
-  vec2 puv = vec2((uv.x * uRes.x - uLead) / pw, uv.y);
-  float pa = pw / uRes.y;
+  // smoke swirls harder than photos, and sideways to its flow so it curls
+  float k = uStrength * (uMode < .5 ? 2.2 : 1.);
+  vec2 uv = vUv - v * k - vec2(-v.y, v.x) * k * .7 * m;
+  // uVert: the page travels vertically (stacked layout), so the lead and the burn run down from the top instead of
+  // in from the right. A = px along the travel (from the leading side), C = 0..1 across it, X = size across it.
+  float vt = step(.5, uVert);
+  float A = mix(uv.x * uRes.x, (1. - uv.y) * uRes.y, vt);
+  float C = mix(uv.y, uv.x, vt);
+  float X = mix(uRes.y, uRes.x, vt);
+  float pw = max(uRes.x - uLead * (1. - vt), 1.), ph = max(uRes.y - uLead * vt, 1.);
+  vec2 puv = vec2((uv.x * uRes.x - uLead * (1. - vt)) / pw, uv.y * uRes.y / ph);
+  float pa = pw / ph;
 
   vec3 base = uMode < .5 ? smoke(puv, pa) : uGround + (fbm(puv * vec2(pa, 1.) * 3. + uTime * .02) - .5) * .035;
   float ws = uW.x + uW.y + uW.z;
@@ -73,23 +83,22 @@ void main(){
     vec3 img = (tap(uT0, cover(puv, uAsp.x, pa)) * uW.x + tap(uT1, cover(puv, uAsp.y, pa)) * uW.y + tap(uT2, cover(puv, uAsp.z, pa)) * uW.z) / ws;
     float lum = dot(img, vec3(.299, .587, .114));
     vec3 toned = img;
-    if (uTone > .5 && uTone < 1.5) toned = vec3(.894, .122, .075) * pow(lum, .85) * 1.15;
+    if (uTone > .5 && uTone < 1.5) toned = vec3(.055, .549, .502) * pow(lum, .85) * 1.15;
     else if (uTone > 1.5 && uTone < 2.5) toned = vec3(lum);
     else if (uTone > 2.5) toned = base * (.3 + lum * 1.35);
     // Photos belong to the panel itself; the smoky lead ahead of it shows only the ground.
-    base = mix(base, mix(toned, img, uColor), min(ws, 1.) * smoothstep(-.06, 0., puv.x));
+    base = mix(base, mix(toned, img, uColor), min(ws, 1.) * smoothstep(-.06, 0., mix(puv.x, 1. - puv.y, vt)));
   }
-  base += uGlow * smoothstep(.04, .6, m) * .32;
   if (uFog > 0.) {
     float fog = smoothstep(.35, 1., puv.y + (fbm(puv * vec2(pa, 1.) * 1.5 + vec2(0., uTime * .1)) - .5) * .6) * uFog;
     base = mix(base, vec3(.929, .925, .91), fog);
   }
   // Burn: the next section's darkness billows in from the right (front at uBurn px), with glowing wisps.
   if (uBurn > -1e5) {
-    float x = uv.x * uRes.x;
-    float bw = uRes.y * uBurnWidth;
-    float n1 = fbm(vec2(x / uRes.y * 1.4 - uTime * .04, uv.y * 1.4 + uTime * .02));
-    float n2 = fbm(vec2(x / uRes.y * 3., uv.y * 3.) + n1 * 2.2 + vec2(uTime * .03, 0.));
+    float x = A;
+    float bw = X * uBurnWidth;
+    float n1 = fbm(vec2(x / X * 1.4 - uTime * .04, C * 1.4 + uTime * .02));
+    float n2 = fbm(vec2(x / X * 3., C * 3.) + n1 * 2.2 + vec2(uTime * .03, 0.));
     // uBurnShift > 0 makes the next section's colour complete *before* its edge (so that edge never shows).
     float f = (x - (uBurn - bw) + (n2 - .5) * bw * 1.2) / bw + uBurnShift;
     float edge = exp(-pow((f - .32) * 3., 2.));       // just ahead of the front: the surface glows up
@@ -98,8 +107,8 @@ void main(){
     base = mix(base, uBurnCol, smoothstep(.28, .82, f));
   }
   if (uLead > 0.) {
-    float x = uv.x * uRes.x;
-    float n = fbm(vec2(x / uRes.y * 2.4, uv.y * 2.4) + vec2(uTime * .03, -uTime * .05));
+    float x = A;
+    float n = fbm(vec2(x / X * 2.4, C * 2.4) + vec2(uTime * .03, -uTime * .05));
     // Fully solid by the panel's own left edge (x = uLead), ragged and smoky before it.
     float f = (x - uLead * (.08 + n * .62)) / (uLead * .3);
     float a = smoothstep(0., 1., f);
@@ -131,16 +140,16 @@ void main(){
   float x = uv.x * uRes.x, Y = uv.y;
   float n1 = fbm(vec2(x / uRes.y * 1.4 - uTime * .04, Y * 1.4 + uTime * .02));
   float n2 = fbm(vec2(x / uRes.y * 3., Y * 3.) + n1 * 2.2 + vec2(uTime * .03, 0.));
-  vec3 ivory = vec3(.929, .925, .91), dark = vec3(.114, .082, .047), lw = vec3(.299, .587, .114);
+  vec3 ivory = vec3(.929, .925, .91), dark = vec3(.051, .106, .141), lw = vec3(.299, .587, .114);
 
   // the red print, mapped onto its own panel
   vec2 ru = vec2((x - uRed.x) / max(uRed.y, 1.), Y);
   float za = uRed.y / uRes.y;
   if (uAsp.x > 0.) ru = za > uAsp.x ? vec2(ru.x, (ru.y - .5) * uAsp.x / za + .5) : vec2((ru.x - .5) * za / uAsp.x + .5, ru.y);
-  vec3 red = vec3(.894, .122, .075) * pow(dot(texture2D(uT0, clamp(ru, 0., 1.)).rgb, lw), .85) * 1.15;
+  vec3 red = vec3(.055, .549, .502) * pow(dot(texture2D(uT0, clamp(ru, 0., 1.)).rgb, lw), .85) * 1.15;
   // ahead of the red panel there is no photo yet: plain red instead of a smeared edge column
   float into = (x - uRed.x) / max(uRed.y, 1.);
-  red = mix(vec3(.78, .1, .06), red, step(0., into) * smoothstep(0., .3, into + (fbm(vec2(x / uRes.y * 2.5, uv.y * 2.5) + uTime * .03) - .5) * .25));
+  red = mix(vec3(.04, .45, .42), red, step(0., into) * smoothstep(0., .3, into + (fbm(vec2(x / uRes.y * 2.5, uv.y * 2.5) + uTime * .03) - .5) * .25));
 
   // progress across each band; the band runs ahead of (left of) the arriving panel's edge
   float bw = uRes.y * .8, jit = (n2 - .5) * bw * 1.2;
@@ -149,20 +158,18 @@ void main(){
   vec3 c = ivory;
   // paper burn: scorched, embers, then dark
   float k1 = exp(-pow((f1 - .32) * 3., 2.));
-  c = mix(c, vec3(.62, .42, .28), smoothstep(0., .45, f1) * .5);
-  c += vec3(1., .34, .1) * k1 * smoothstep(.45, .8, n2) * 1.15;
+  c = mix(c, vec3(.2, .42, .44), smoothstep(0., .45, f1) * .5);
+  c += vec3(1., .72, .3) * k1 * smoothstep(.45, .8, n2) * 1.15;
   c = mix(c, dark, smoothstep(.28, .82, f1));
   // the dark glows up and burns with embers into the red
   float k2 = exp(-pow((f2 - .32) * 3., 2.));
   c *= 1. + k2 * .85;
-  c += vec3(1., .42, .16) * k2 * smoothstep(.35, .8, n2) * .8;
+  c += vec3(.35, .95, .82) * k2 * smoothstep(.35, .8, n2) * .8;
   c = mix(c, red, smoothstep(.28, .82, f2));
   // a white fog rolls in
   float k3 = exp(-pow((f3 - .32) * 3., 2.));
   c += vec3(1.) * k3 * smoothstep(.3, .75, n2) * .35;
   c = mix(c, ivory, smoothstep(.28, .82, f3));
-  // the pointer's wake
-  c += vec3(1., .55, .35) * smoothstep(.04, .6, m) * .22;
   gl_FragColor = vec4(c, 1.);
 }`;
 
@@ -177,13 +184,16 @@ export type SurfaceOpts = {
   tone?: "color" | "duo" | "mono" | "lum";
   blur?: number;
   leadVw?: number;
+  /** Stacked layout: lead (in vh) reaching up over the previous section, and burns run top → bottom. */
+  leadVh?: number;
+  vertical?: boolean;
   strength?: number;
   scale?: number;
   /** Blur radius (px, at 1200px wide) to bake into each image before upload. */
   preblur?: number[];
   /** Draw the backdrop instead: screen x of the three arriving panels' left edges, and the red panel's [left, width]. */
   backdrop?: { edges: () => [number, number, number]; red: () => [number, number] };
-  /** Screen x (CSS px) of the section burning in over this one, or null. */
+  /** Screen x (CSS px) of the section burning in over this one, or null. Screen y when `vertical`. */
   burnFrom?: () => number | null;
   /** Colour the surface burns into (defaults to its ground), the glow of its billows, and how early it completes. */
   burnColor?: string;
@@ -218,6 +228,10 @@ function listen() {
   if (listening) return;
   listening = true;
   addEventListener("pointermove", (e) => { pointer.x = e.clientX; pointer.y = e.clientY; }, { passive: true });
+  // On touch screens a finger stirs it too, also while it scrolls the page (pointer events stop once scrolling starts).
+  const touch = (e: TouchEvent) => { const t = e.touches[0]; if (t) { pointer.x = t.clientX; pointer.y = t.clientY; } };
+  addEventListener("touchstart", touch, { passive: true });
+  addEventListener("touchmove", touch, { passive: true });
 }
 
 export function createSurface(host: HTMLElement, opts: SurfaceOpts, state: () => SurfaceState, onReady?: () => void) {
@@ -309,10 +323,12 @@ export function createSurface(host: HTMLElement, opts: SurfaceOpts, state: () =>
     }).catch(() => pending--),
   );
 
-  const scale = opts.scale ?? (opts.mode === "smoke" ? 0.6 : 0.85);
-  const pal = (opts.palette || ["#1c0905", "#8a1c11", "#f0451f"]).map(hex);
-  const glow = hex(opts.glow || "#ff5a2a");
-  const ground = hex(opts.ground || "#1d150c");
+  // Phones draw at a lower resolution: the smoke is soft anyway and it saves battery.
+  const coarse = matchMedia("(pointer: coarse)").matches;
+  const scale = opts.scale ?? (opts.mode === "smoke" ? (coarse ? 0.4 : 0.6) : coarse ? 0.6 : 0.85);
+  const pal = (opts.palette || ["#04141c", "#0b5a5e", "#20b3a2"]).map(hex);
+  const glow = hex(opts.glow || "#f2b65a");
+  const ground = hex(opts.ground || "#0d1b24");
   const burnCol = opts.burnColor ? hex(opts.burnColor) : ground;
   const burnGlow = opts.burnGlow ? hex(opts.burnGlow) : glow;
   const t0 = performance.now();
@@ -364,7 +380,7 @@ export function createSurface(host: HTMLElement, opts: SurfaceOpts, state: () =>
     const tw = s.w || (srcs.length ? [1, 0, 0] : [0, 0, 0]);
     w = w.map((x, i) => x + (tw[i] - x) * 0.06);
     color += ((s.color ?? 0) - color) * 0.06;
-    const lead = opts.leadVw ? (opts.leadVw / 100) * innerWidth * scale : 0;
+    const lead = opts.vertical ? ((opts.leadVh || 0) / 100) * innerHeight * scale : opts.leadVw ? (opts.leadVw / 100) * innerWidth * scale : 0;
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(0, 0, cw, ch);
@@ -394,13 +410,14 @@ export function createSurface(host: HTMLElement, opts: SurfaceOpts, state: () =>
     gl.uniform1f(disp.u("uGlowAmt"), opts.glowAmt ?? 1);
     gl.uniform1f(disp.u("uFog"), parseFloat(getComputedStyle(host).getPropertyValue("--fog")) || 0);
     gl.uniform1f(disp.u("uLead"), lead);
+    gl.uniform1f(disp.u("uVert"), opts.vertical ? 1 : 0);
     gl.uniform3f(disp.u("uW"), w[0], w[1], w[2]);
     gl.uniform3f(disp.u("uAsp"), asp[0], asp[1], asp[2]);
     gl.uniform1f(disp.u("uTone"), TONES[opts.tone || "color"]);
     gl.uniform1f(disp.u("uColor"), color);
     gl.uniform1f(disp.u("uBlur"), (opts.blur ?? 0) * scale);
     const bx = opts.burnFrom?.();
-    gl.uniform1f(disp.u("uBurn"), bx == null ? -1e6 : (bx - rect.left) * scale);
+    gl.uniform1f(disp.u("uBurn"), bx == null ? -1e6 : (bx - (opts.vertical ? rect.top : rect.left)) * scale);
     gl.uniform3f(disp.u("uBurnCol"), ...burnCol);
     gl.uniform3f(disp.u("uBurnGlow"), ...burnGlow);
     gl.uniform1f(disp.u("uBurnShift"), opts.burnShift ?? 0);

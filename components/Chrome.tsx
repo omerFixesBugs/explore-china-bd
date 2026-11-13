@@ -125,7 +125,7 @@ export default function Chrome() {
       {/* Menu */}
       <div ref={menu} id="site-menu" role="dialog" aria-modal="true" aria-label="Menu" inert={!open} className="fixed inset-0 z-[95] overflow-hidden text-paper" style={{ clipPath: "inset(0% 0% 100% 0%)" }}>
         {open ? (
-          <Surface opts={{ mode: "smoke", palette: SMOKE_WARM, glow: "#ffd2b8" }}>
+          <Surface opts={{ mode: "smoke", palette: SMOKE_WARM, glow: "#ffe6bf" }}>
             <div className="smoke-fallback absolute inset-0" />
           </Surface>
         ) : (

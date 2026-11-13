@@ -46,7 +46,7 @@ export default function Run({ id, className = "", line = true, children }: { id?
   }, { scope: ref });
 
   return (
-    <section ref={ref} id={id} className={`run relative overflow-hidden ${className}`}>
+    <section ref={ref} id={id} className={`run relative overflow-clip ${className}`}>
       <div data-track className="relative row:flex row:h-screen row:w-max row:flex-nowrap">
         {line && <div aria-hidden className="pointer-events-none absolute left-0 z-20 hidden h-px w-full bg-current opacity-25 row:block" style={{ top: "var(--line)" }} />}
         {children}
@@ -131,7 +131,21 @@ function fx(root: HTMLElement, ca: gsap.core.Tween | null, motion: boolean) {
     });
   });
 
-  if (!H) return;
+  // Stacked: a hold panel pins for a screen and a half instead; its photo grows ([data-grow]) and its text rises in ([data-pass]).
+  if (!H) {
+    q('[data-fx~="hold"]').forEach((p) => {
+      const grow = q("[data-grow]", p), pass = q("[data-pass]", p);
+      if (!grow.length && !pass.length) return;
+      const ht = gsap.timeline({ scrollTrigger: { trigger: p, start: "top top", end: "+=150%", pin: true, scrub: true, invalidateOnRefresh: true } });
+      grow.forEach((el) => {
+        ht.fromTo(el, { scale: parseFloat(el.dataset.grow || "0.3") }, { scale: 1, ease: "power2.inOut", duration: 0.6 }, 0);
+        const img = el.querySelector("img");
+        if (img) ht.fromTo(img, { scale: 1.35 }, { scale: 1, ease: "power2.inOut", duration: 0.6 }, 0);
+      });
+      pass.forEach((el) => ht.fromTo(el, { y: () => innerHeight * 0.3, autoAlpha: 0, filter: "blur(10px)" }, { y: 0, autoAlpha: 1, filter: "blur(0px)", ease: "power2.out", duration: 0.4 }, 0.5));
+    });
+    return;
+  }
 
   // stay: nearly stops while the next panel slides over it like a curtain.
   // [data-stay-fade] content blurs away as the next panel takes over; [data-fade-at] (0..1 of the panel's width) sets when.
@@ -175,6 +189,17 @@ function fx(root: HTMLElement, ca: gsap.core.Tween | null, motion: boolean) {
     const stage = p.querySelector("[data-stage]");
     if (!stage) return;
     gsap.to(stage, { x: () => p.offsetWidth - innerWidth, ease: "none", scrollTrigger: st(p, { start: "left left", end: "right right", scrub: true, invalidateOnRefresh: true }) });
+    // During the hold: [data-grow] scales up from its value to full size (first half), then [data-pass] crosses the screen right → left.
+    const grow = q("[data-grow]", stage), pass = q("[data-pass]", stage);
+    if (grow.length || pass.length) {
+      const ht = gsap.timeline({ scrollTrigger: st(p, { start: "left left", end: "right right", scrub: true, invalidateOnRefresh: true }) });
+      grow.forEach((el) => {
+        ht.fromTo(el, { scale: parseFloat(el.dataset.grow || "0.3") }, { scale: 1, ease: "power2.inOut", duration: 0.55 }, 0);
+        const img = el.querySelector("img");
+        if (img) ht.fromTo(img, { scale: 1.35 }, { scale: 1, ease: "power2.inOut", duration: 0.55 }, 0);
+      });
+      pass.forEach((el) => ht.fromTo(el, { x: () => innerWidth * 0.7 }, { x: () => -innerWidth * 0.95, ease: "none", duration: 0.6 }, 0.4));
+    }
     // hold + stay: after the hold the stage keeps (almost) still while the next panel burns in over it.
     if (p.matches('[data-fx~="stay"]')) {
       const tl = gsap.timeline({ scrollTrigger: st(p, { start: "right right", end: "right left", scrub: true, invalidateOnRefresh: true }) });

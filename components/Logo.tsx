@@ -9,7 +9,7 @@ export function Mark({ className = "", draw = false }: { className?: string; dra
       <path d="M12 23 Q32 15 52 23" {...s} />
       <path d="M17 29 H47" {...s} />
       <path d="M22 29 V50 M42 29 V50" {...s} />
-      <circle cx="32" cy="41" r="6" fill="#e41f13" stroke="none" className={draw ? "mark-fill" : ""} />
+      <circle cx="32" cy="41" r="6" fill="#f2b65a" stroke="none" className={draw ? "mark-fill" : ""} />
     </svg>
   );
 }

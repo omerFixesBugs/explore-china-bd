@@ -6,23 +6,28 @@ const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?w=$
 export const site = {
   name: "Explore China BD",
   wordmark: "EXPLORE CHINA",
-  phone: "+880 1700 000 000",
-  whatsapp: "https://wa.me/8801700000000",
+  // Both lines take calls; WhatsApp is on the first one.
+  phones: [
+    { label: "01770-768159", tel: "+8801770768159" },
+    { label: "01306-277017", tel: "+8801306277017" },
+  ],
+  whatsapp: "https://wa.me/8801770768159",
   email: "hello@explorechinabd.com",
-  address: "Gulshan Avenue, Dhaka, Bangladesh",
+  address: "Offices in Dhaka and Chattogram, serving students from all over Bangladesh",
   year: 2026,
 
   preloader: ["A path to", "study", "work", "life in China."],
 
   corners: {
-    meet: { label: "Let's talk 👋", href: "#contact" },
-    social: { label: "WhatsApp", href: "https://wa.me/8801700000000" },
+    meet: { label: "Call 01770-768159", href: "tel:+8801770768159" },
+    social: { label: "WhatsApp", href: "https://wa.me/8801770768159" },
     hint: { label: "Free consultation", href: "#contact" },
   },
 
   menu: {
     items: [
-      { label: "Manifesto", href: "#top" },
+      { label: "Home", href: "#top" },
+      { label: "Stories", href: "#stories" },
       { label: "Services", href: "#services" },
       { label: "Life", href: "#life" },
       { label: "Universities", href: "#universities" },
@@ -30,8 +35,9 @@ export const site = {
       { label: "FAQ", href: "#faq" },
     ],
     actions: [
-      { label: "Call us", href: "tel:+8801700000000" },
-      { label: "WhatsApp", href: "https://wa.me/8801700000000" },
+      { label: "Call 01770-768159", href: "tel:+8801770768159" },
+      { label: "Call 01306-277017", href: "tel:+8801306277017" },
+      { label: "WhatsApp", href: "https://wa.me/8801770768159" },
       { label: "Email us", href: "mailto:hello@explorechinabd.com" },
     ],
   },
@@ -47,20 +53,23 @@ export const site = {
 
   intro: {
     title: ["Every future", "begins with", "one step."],
-    portrait: u("1543269865-cbf427effbad", 700),
+    portrait: u("1543269865-cbf427effbad", 1400),
     label: "A different way to go abroad",
     text: "We don't send applications. We open doors. The life you build in China begins with the way you prepare for it. Honest advice. Clear paperwork. Someone who answers.",
   },
 
-  // Full-bleed film panel: our students' own stories (link the card to your testimonial videos).
-  film: {
+  // Student stories. PLACEHOLDERS: replace names and quotes with real students (with their permission) before launch.
+  stories: {
     image: u("1545893835-abaa50cbe628", 2400),
-    video: "", // optional muted loop, e.g. a student's clip: "/stories.mp4"
-    thumb: u("1522202176988-66273c2fd55f", 500),
     label: "Student stories",
-    cta: ["Student", "stories"],
-    href: "https://youtube.com", // your YouTube / Facebook testimonials
-    caption: "Real students. Real visas. In their own words.",
+    title: ["From Bangladesh", "to campus."],
+    text: "Three of the students we sent last year. Different budgets, different goals, the same team behind every file.",
+    cta: { label: "Watch their videos", href: "https://youtube.com" }, // your YouTube / Facebook testimonials
+    items: [
+      { quote: "I applied for CSC twice on my own and missed it. They told me which university to target and my full scholarship came through in May.", name: "Nusrat J.", from: "Chattogram", detail: "Master's · Nanjing University", tag: "Full CSC · X1" },
+      { quote: "My JW202 had a spelling mistake. They caught it before the embassy did, got it reissued, and I still flew on time.", name: "Rafi H.", from: "Rajshahi", detail: "MBBS · Wuhan University", tag: "X1 · Sept intake" },
+      { quote: "Someone met me at Shanghai airport and my residence permit was done in three weeks. My parents slept well that month.", name: "Tasnim A.", from: "Sylhet", detail: "Bachelor's · Fudan University", tag: "Partial scholarship" },
+    ],
   },
 
 
@@ -93,6 +102,7 @@ export const site = {
     label: "An invitation to begin",
     text: "Your path starts where you are. There is no single way to China. We help you find the programme, the city and the scholarship that fit who you are, what you need, and where you want to go.",
     cta: { label: "Explore universities", href: "#universities" },
+    call: "Call us for a free consultation",
   },
 
   bleed: { image: u("1547981609-4b6bfe67ca0b", 2400), label: "Where you could be next September", statement: ["Every city", "is a classroom."] },
@@ -102,7 +112,7 @@ export const site = {
     label: "Who we are",
     title: ["We open doors", "for students,", "families", "and dreamers."],
     accent: "doors",
-    text: "Explore China BD is a small team in Dhaka that stays with you from the first conversation to your first semester: the right programme, the scholarship, the visa, and the landing.",
+    text: "Explore China BD has offices in Dhaka and Chattogram and works with students from every part of Bangladesh. We stay with you from the first conversation to your first semester: the right programme, the scholarship, the visa, and the landing.",
     cta: { label: "About us", href: "#contact" },
     image: u("1529156069898-49953e39b3ac", 1400), // replace with your team or your students in China
     caption: "Life after the visa",
@@ -180,7 +190,7 @@ export const site = {
       { label: "FAQ", href: "#faq" },
       { label: "Contact", href: "mailto:hello@explorechinabd.com" },
     ],
-    credit: ["From Dhaka", "to China"],
+    credit: ["From Bangladesh", "to China"],
   },
 
   breath: {

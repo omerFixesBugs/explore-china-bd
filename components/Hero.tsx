@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { site } from "@/content/site";
 import { Panel } from "./Run";
 import Surface from "./Surface";
 
-export const SMOKE_HERO: [string, string, string] = ["#1c0905", "#8a1c11", "#f0451f"];
-export const SMOKE_WARM: [string, string, string] = ["#6e140c", "#cf2416", "#ff6b3d"];
-import { gsap, useGSAP, onIntroDone } from "@/lib/motion";
+export const SMOKE_HERO: [string, string, string] = ["#04141c", "#0b5a5e", "#20b3a2"];
+export const SMOKE_WARM: [string, string, string] = ["#0c3d4c", "#138a84", "#f2b65a"];
+import { gsap, useGSAP, onIntroDone, WIDE, MOTION, isEdit } from "@/lib/motion";
 
 const DUR = 6;
 
@@ -17,18 +17,20 @@ export function HeroRings({ active = -1, hover = -1, auto = false, cycle = 0, on
 }) {
   const steps = site.hero.steps;
   return (
-    <div className="absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2" style={{ top: "var(--line)" }} role={interactive ? "tablist" : undefined} aria-label={interactive ? "Highlights" : undefined}>
+    <div className="absolute left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center lg:flex-row" style={{ top: "var(--line)" }} role={interactive ? "tablist" : undefined} aria-label={interactive ? "Highlights" : undefined}>
       {steps.map((s, i) => {
         const on = i === (hover >= 0 ? hover : active);
-        const cls = `relative grid aspect-square w-[34vw] place-items-center md:w-[19.45vw] ${i ? "-ml-[4vw] md:-ml-[2.1vw]" : ""}`;
+        // Phones and portrait tablets: stacked down the middle (the middle ring on the line), as in the reference.
+        // --len: the ring's on-screen circumference, for the timer trace (its stroke never scales, so dashes are screen px).
+        const cls = `relative grid aspect-square w-[164px] place-items-center [--len:calc(164px*3.1416+2px)] lg:w-[19.45vw] lg:[--len:calc(19.45vw*3.1416+2px)] ${i ? "-mt-[21px] lg:-ml-[2.1vw] lg:mt-0" : ""}`;
         const body = (
           <>
             <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90 overflow-visible" aria-hidden>
-              <circle cx="50" cy="50" r="49.8" className={`fill-none stroke-paper [vector-effect:non-scaling-stroke] transition-[stroke-opacity] duration-700 ${on && hover >= 0 ? "[stroke-opacity:1]" : "[stroke-opacity:0.35]"}`} />
+              <circle data-ring-draw cx="50" cy="50" r="49.8" className={`fill-none stroke-paper [vector-effect:non-scaling-stroke] transition-[stroke-opacity] duration-700 ${on && hover >= 0 ? "[stroke-opacity:1]" : "[stroke-opacity:0.35]"}`} />
               {interactive && (
                 <circle
                   key={`${i}-${cycle}-${active}`}
-                  cx="50" cy="50" r="49.8" pathLength={1}
+                  cx="50" cy="50" r="49.8"
                   className={`trace fill-none stroke-paper [vector-effect:non-scaling-stroke] ${i === active && auto ? "tracing" : "opacity-0"}`}
                   style={{ ["--dur" as string]: `${DUR}s` }}
                   onAnimationEnd={() => onDone?.(i)}
@@ -36,11 +38,11 @@ export function HeroRings({ active = -1, hover = -1, auto = false, cycle = 0, on
               )}
             </svg>
             {/* "+" on the line; becomes "—" when active */}
-            <svg viewBox="0 0 24 24" className="absolute left-1/2 top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-paper" stroke="currentColor" strokeWidth="1" aria-hidden>
+            <svg data-magnet data-ring-in viewBox="0 0 24 24" className="absolute inset-0 m-auto h-5 w-5 text-paper" stroke="currentColor" strokeWidth="1" aria-hidden>
               <path d="M0 12h24" />
               <path d="M12 0v24" className={`transition-transform duration-700 ease-out ${on && interactive ? "scale-y-0" : ""}`} style={{ transformBox: "fill-box", transformOrigin: "center" }} />
             </svg>
-            <span className={`t-ui absolute left-1/2 top-[calc(50%+28px)] -translate-x-1/2 transition-opacity duration-700 ${on ? "opacity-100" : "opacity-80"}`}>{s.label}</span>
+            <span data-ring-in className={`t-ui absolute left-1/2 top-[calc(50%+24px)] -translate-x-1/2 whitespace-nowrap lg:top-[calc(50%+28px)] transition-opacity duration-700 ${on ? "opacity-100" : "opacity-80"}`}>{s.label}</span>
           </>
         );
         return interactive ? (
@@ -56,7 +58,7 @@ export function HeroRings({ active = -1, hover = -1, auto = false, cycle = 0, on
             onBlur={() => onHover?.(-1)}
             data-cursor="dissolve"
             data-cursor-snap-to="svg"
-            data-hero-in
+            data-touch
             className={cls}
           >
             {body}
@@ -72,12 +74,15 @@ export function HeroRings({ active = -1, hover = -1, auto = false, cycle = 0, on
 /** Where the intro panel starts on screen, while the first run is sideways. */
 const introEdge = () => {
   const el = document.getElementById("intro");
-  return el?.closest(".run.is-row") ? el.getBoundingClientRect().left : null;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  // Sideways: its left edge. Stacked: its top edge, while it rises over the (sticky) hero.
+  return el.closest(".run.is-row") ? r.left : r.top < innerHeight ? r.top : null;
 };
 
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <p aria-hidden className={`t-wordmark pointer-events-none absolute inset-x-0 top-[2.2vh] select-none overflow-hidden px-[1.2vw] text-lacquer ${className}`}>
+    <p aria-hidden className={`t-wordmark pointer-events-none absolute inset-x-0 top-[2.2vh] select-none overflow-hidden px-[1.2vw] text-jade ${className}`}>
       {site.wordmark.split("").map((ch, i) => (
         <span key={i} data-letter className="inline-block whitespace-pre">{ch}</span>
       ))}
@@ -95,30 +100,46 @@ export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const shown = hover >= 0 ? hover : active;
 
-  useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    return onIntroDone(() => setAuto(true));
-  }, []);
-
   useGSAP(() => {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     // Resolve now: the intro callback may run inside another component's GSAP context.
     const letters = ref.current!.querySelectorAll("[data-letter]");
-    const ins = ref.current!.querySelectorAll("[data-hero-in]");
+    const draws = gsap.utils.toArray<SVGCircleElement>(ref.current!.querySelectorAll("[data-ring-draw]"));
+    // The rings keep a 1px line at any size (non-scaling stroke), so their dashes are measured in screen px:
+    // use each ring's on-screen circumference rather than pathLength.
+    const len = (c: SVGCircleElement) => c.getBoundingClientRect().width * Math.PI + 2;
+    const ringIns = ref.current!.querySelectorAll("[data-ring-in]");
+    const lines = ref.current!.querySelectorAll("[data-tag-line]");
     gsap.set(letters, { autoAlpha: 0, filter: "blur(30px)" });
-    gsap.set(ins, { autoAlpha: 0, filter: "blur(12px)" });
+    draws.forEach((c) => gsap.set(c, { strokeDasharray: len(c), strokeDashoffset: len(c) }));
+    gsap.set(ringIns, { autoAlpha: 0, filter: "blur(8px)" });
+    gsap.set(lines, { yPercent: 110 });
+    // As in the reference: the wordmark settles, the tagline rises line by line, then each ring draws itself in turn
+    // and its "+" and label sharpen in; only then does the ring timer start.
     return onIntroDone(() => {
       gsap.to(letters, { autoAlpha: 1, filter: "blur(0px)", duration: 1.8, stagger: { each: 0.08, from: "random" }, ease: "power2.out", delay: 0.85 });
-      gsap.to(ins, { autoAlpha: 1, filter: "blur(0px)", duration: 1.4, stagger: 0.12, delay: 1.1, ease: "power2.out" });
+      gsap.timeline({ delay: 1.5, onComplete: () => setAuto(true) })
+        .to(lines, { yPercent: 0, duration: 1.1, stagger: 0.14, ease: "power3.out" }, 0)
+        .to(draws, { strokeDashoffset: 0, duration: 1.5, stagger: 0.3, ease: "power2.inOut", onComplete: () => gsap.set(draws, { clearProps: "strokeDasharray,strokeDashoffset" }) }, 0.45)
+        .to(ringIns, { autoAlpha: 1, filter: "blur(0px)", duration: 0.9, stagger: 0.15, ease: "power2.out" }, 1.25);
+    });
+  }, { scope: ref });
+
+  // Stacked: while the intro rises over the sticky hero, the hero's words blur away ahead of the burn.
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+    mm.add(`not all and ${WIDE.replace(" and (prefers-reduced-motion: no-preference)", "")}`, () => {
+      if (isEdit() || !matchMedia(MOTION).matches) return;
+      gsap.to(ref.current!.querySelector("[data-stay-fade]"), { autoAlpha: 0, filter: "blur(14px)", ease: "none", scrollTrigger: { trigger: document.getElementById("intro"), start: "top 85%", end: "top 30%", scrub: true } });
     });
   }, { scope: ref });
 
   return (
         // The panel runs 60vw past its content so the intro's smoke front starts off-screen and only sweeps in on scroll.
-    <Panel id="top" fx={["stay"]} className="row:w-[160vw] h-svh overflow-hidden bg-deep text-paper">
+    <Panel id="top" fx={["stay"]} className="row:w-[160vw] h-svh overflow-hidden bg-deep text-paper mo:sticky mo:top-0">
       <div ref={ref} className="absolute inset-0">
         <Surface
-          opts={{ mode: "smoke", palette: SMOKE_HERO, images: steps.map((x) => x.image), tone: "lum", glow: "#ff6a3d", ground: "#1a1109", burnFrom: introEdge }}
+          opts={{ mode: "smoke", palette: SMOKE_HERO, images: steps.map((x) => x.image), tone: "lum", glow: "#f2b65a", ground: "#0a161e", burnFrom: introEdge }}
           state={{ w: [0, 1, 2].map((i) => (i === shown ? (hover >= 0 ? 1 : 0.16) : 0)) as [number, number, number], color: hover >= 0 ? 1 : 0 }}
         >
           <div className="smoke-fallback absolute inset-0" />
@@ -149,9 +170,9 @@ export default function Hero() {
           onDone={(i) => { setActive((i + 1) % steps.length); setCycle((c) => c + 1); }}
         />
 
-        <p data-hero-in className="t-tagline absolute inset-x-0 bottom-16 text-center text-sand md:bottom-5">
+        <p className="t-tagline absolute inset-x-0 bottom-16 text-center text-sand md:bottom-5">
           {tagline.map((l, i) => (
-            <span key={i} className="block">{l}</span>
+            <span key={i} className="block overflow-hidden"><span data-tag-line className="block">{l}</span></span>
           ))}
         </p>
         </div>
